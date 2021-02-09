@@ -1,36 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/gorilla/websocket"	
+	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{}
-var redisCache = GetClient()
+var redisClient = RedisClient{
+	client: nil,
+}
+var ctx = context.Background()
 
 func echo(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
+	rdb := GetClient(&redisClient)
+	err := rdb.Publish(ctx, "mychannel1", "payload").Err()
 	if err != nil {
-		log.Print("upgrade:", err)
-		return
-	}
-	defer c.Close()
-
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			log.Println("read:", err)
-			break
-		}
-		log.Printf("recv: %s", message)
-		err = c.WriteMessage(mt, message)
-		if err != nil {
-			log.Println("write:", err)
-			break
-		}
+		panic(err)
 	}
 }
 

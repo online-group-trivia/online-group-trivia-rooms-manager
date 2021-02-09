@@ -12,7 +12,7 @@ type RedisClient struct {
 }
 
 // GetClient is the best method to create clients.
-func (c *RedisClient) GetClient() *redis.Client {
+func GetClient(c *RedisClient) *redis.Client {
 	if c.client == nil {
 		c.client = redis.NewClient(&redis.Options{
 			Addr:        "localhost:6379",
