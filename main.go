@@ -1,17 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path[1:]
-	if path != "" {
-		fmt.Fprintf(w, "Hi there, I love %s!", path)
-	} else {
-		fmt.Fprintf(w, "Hi there!")
+var upgrader = websocket.Upgrader{}
+var redisClient = RedisClient{
+	client: nil,
+}
+var ctx = context.Background()
+
+func echo(w http.ResponseWriter, r *http.Request) {
+	rdb := GetClient(&redisClient)
+	err := rdb.Publish(ctx, "mychannel1", "payload").Err()
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -24,7 +32,7 @@ func logRequest(handler http.Handler) http.Handler {
 
 func main() {
 	httpPort := 9632
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", echo)
 	fmt.Printf("listening on %v\n", httpPort)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), logRequest(http.DefaultServeMux)))
 }
